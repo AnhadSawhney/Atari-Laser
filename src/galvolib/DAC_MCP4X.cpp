@@ -1,3 +1,5 @@
+#if false
+
 /*
  * Microchip MCP4901 / MCP4911 / MCP4921 / MCP4902 / MCP4912 / MCP4922 8/10/12-bit DAC driver
  *
@@ -9,7 +11,7 @@
 
 
 byte MCP4X::init(byte model, unsigned int vrefA, unsigned int vrefB,
-		int ss_pin, int ldac_pin, boolean autoLatch) {
+		int ss_pin, int ldac_pin, bool autoLatch) {
 
 	const byte resolutions[] = {8,10,12};
 
@@ -31,7 +33,7 @@ byte MCP4X::init(byte model, unsigned int vrefA, unsigned int vrefB,
 	return 1;
 }
 
-void MCP4X::begin(boolean beginSPI) {
+void MCP4X::begin(bool beginSPI) {
 
 	pinMode(ss_pin, OUTPUT); // Ensure that SS is set to SPI master mode
 	pinMode(LDAC_pin, OUTPUT);
@@ -57,7 +59,7 @@ void MCP4X::configureSPI() {
 // Example: with 1x gain, set(100) on a 8-bit (256-step) DAC would give
 // an output voltage of 100/256 * VREF, while a gain of 2x would give
 // vout = 100/256 * VREF * 2
-void MCP4X::setGain2x(byte chan, boolean gain2x) {
+void MCP4X::setGain2x(byte chan, bool gain2x) {
 	chan &= 0x1;
 	if (gain2x)
 		regs[chan] &= ~MCP4X_GAIN_1X;
@@ -68,7 +70,7 @@ void MCP4X::setGain2x(byte chan, boolean gain2x) {
 // Shuts the DAC down. Shutdown current is about 1/50 (typical) of active mode current.
 // My measurements say ~160-180 µA active (unloaded vout), ~3.5 µA shutdown.
 // Time to settle on an output value increases from ~4.5 µs to ~10 µs, though (according to the datasheet).
-void MCP4X::shutdown(byte chan, boolean off) {
+void MCP4X::shutdown(byte chan, bool off) {
 
 	chan &= 0x1;
 
@@ -225,3 +227,5 @@ void MCP4X::latch(void) {
 		digitalWrite(LDAC_pin, HIGH);
 	}
 }
+
+#endif

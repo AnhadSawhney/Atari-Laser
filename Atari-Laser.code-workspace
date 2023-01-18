@@ -8,5 +8,9 @@
 			"path": "Atari-Laser"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"*.tcc": "cpp"
+		}
+	}
 }

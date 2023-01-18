@@ -5,14 +5,23 @@
 // these values can be adapted to fine tune sendto:
 
 // if this is enabled, pins need to be 10 and 7 in dac init below, but it is a big speedup!
-#define MCP4X_PORT_WRITE 1
+//#define MCP4X_PORT_WRITE 1
 
-#include "DAC_MCP4X.h"
+//#include "DAC_MCP4X.h"
 
-MCP4X dac;
+//MCP4X dac;
 
-Laser::Laser(int laserPin)
+#include <Adafruit_MCP4725.h>
+//#include <Wire.h>
+
+//TwoWire WIRE1(PB7, PB6);
+
+Adafruit_MCP4725 dac1;
+Adafruit_MCP4725 dac2;
+
+Laser::Laser(int laserPin) //, TwoWire* WIRE)
 {
+  //_WIRE = WIRE;
   _laserPin = laserPin;
   _quality = FROM_FLOAT(1./(LASER_QUALITY));
 
@@ -38,11 +47,14 @@ Laser::Laser(int laserPin)
 
 void Laser::init()
 {
-  dac.init(MCP4X_4822, 5000, 5000,
-      10, 7, 1);
-  dac.setGain2x(MCP4X_CHAN_A, 0);
-  dac.setGain2x(MCP4X_CHAN_B, 0);
-  dac.begin(1);
+  //_WIRE->begin();
+  dac1.begin(0x60); //, _WIRE);
+  dac2.begin(0x61); //, _WIRE);
+  
+  //dac.init(MCP4X_4822, 5000, 5000,10, 7, 1);
+  //dac.setGain2x(MCP4X_CHAN_A, 0);
+  //dac.setGain2x(MCP4X_CHAN_B, 0);
+  //dac.begin(1);
  
   pinMode(_laserPin, OUTPUT);
 }
@@ -62,7 +74,9 @@ void Laser::sendToDAC(int x, int y)
   #ifdef LASER_FLIP_Y
   y1 = 4095 - y1;
   #endif
-  dac.output2(x1, y1);
+  //dac.output2(x1, y1);
+  dac1.setVoltage(x1, false);
+  dac2.setVoltage(y1, false);
 }
 
 void Laser::resetClipArea()

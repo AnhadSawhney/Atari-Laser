@@ -1,3 +1,5 @@
+#if false
+
 /*
  * Thomas Backman, 2012-07 (made a proper library 2011-07-30, 3 weeks after initial)
  * serenity@exscape.org
@@ -88,17 +90,17 @@ public:
 
 	byte init(byte model,
 			unsigned int vrefA = 5000, unsigned int vrefB = 5000,
-			int ss_pin = SS, int ldac_pin = MCP4X_NO_LDAC, boolean autoLatch = 1);
-	void begin(boolean beginSPI = 1);
+			int ss_pin = SS, int ldac_pin = MCP4X_NO_LDAC, bool autoLatch = 1);
+	void begin(bool beginSPI = 1);
 
 	void configureSPI();
 
 	void setVref(byte chan, unsigned int vref)			{ vrefs[chan & 1] = vref;		}
 	void setVref(unsigned int vref)						{ vrefs[0] = vrefs[1] = vref;	}
-	void setBuffer(byte chan, boolean buffered);
-	void setGain2x(byte chan, boolean gain2x = 1);
-	void setAutoLatch(boolean enabled = 1)				{ autoLatch = enabled;			}
-	void shutdown(byte chan, boolean off = 1);
+	void setBuffer(byte chan, bool buffered);
+	void setGain2x(byte chan, bool gain2x = 1);
+	void setAutoLatch(bool enabled = 1)				{ autoLatch = enabled;			}
+	void shutdown(byte chan, bool off = 1);
 
 	void output(byte _chan, unsigned short _out);
 	void output(unsigned short data) 					{ output(MCP4X_CHAN_A, data); 	}
@@ -132,13 +134,15 @@ public:
 private:
 	unsigned int vrefs[2];
 	unsigned int regs[2];
-	boolean dual;
+	bool dual;
 	int ss_pin;
 	int LDAC_pin;
 	int bitwidth;
-	boolean autoLatch; /* call latch() automatically after output2() has been called? */
+	bool autoLatch; /* call latch() automatically after output2() has been called? */
 
 	void write(unsigned int data);
 };
+
+#endif
 
 #endif

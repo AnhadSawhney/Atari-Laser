@@ -5,6 +5,7 @@
 
 #include "Arduino.h"
 #include "Basics.h"
+#include <Wire.h>
 
 // -- The following flags can be used to fine tune the laser timing
 
@@ -24,11 +25,11 @@
 
 // -- The following flags can be used to rotate/flip the output without changing the DAC wiring, just uncomment the desired swap/flip
 // define this to swap X and Y on the DAC
-#define LASER_SWAP_XY
+//#define LASER_SWAP_XY
 // define this to flip along the x axis
-#define LASER_FLIP_X
+//#define LASER_FLIP_X
 // define this to flip along the y axis
-#define LASER_FLIP_Y
+//#define LASER_FLIP_Y
 
 //! Encapsulates the laser movement and on/off state.
 class Laser
@@ -36,7 +37,7 @@ class Laser
 public:
   //! The laser is initialized with the laserPin,
   //! which selects the digital pin that turns the laser pointer on/off.
-  Laser(int laserPin);
+  Laser(int laserPin); //, TwoWire* WIRE);
 
   void init();
 
@@ -70,9 +71,10 @@ public:
   void setMatrix(const Matrix3& matrix) { _matrix = matrix; }
   void setZDist(long dist) { _zDist = dist; }
 
-private:
   //! send X/Y to DAC
   void sendToDAC(int x, int y);
+
+private:  
 
   //! computes the out code for line clipping
   int computeOutCode(long x, long y);
@@ -108,6 +110,8 @@ private:
   bool _enable3D;
   Matrix3 _matrix;
   long _zDist;
+
+  //TwoWire* _WIRE;
 };
 
 #endif
