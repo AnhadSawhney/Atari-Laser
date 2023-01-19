@@ -75,6 +75,18 @@ void Laser::sendToDAC(int x, int y)
   y1 = 4095 - y1;
   #endif
   //dac.output2(x1, y1);
+
+  // clip
+  //x1 = constrain(x1,0,4095);
+  //y1 = constrain(y1,0,4095);
+  if(x1 > 4095) {
+    x1 = 4095;
+  }
+
+  if(y1 > 4095) {
+    y1 = 4095;
+  }
+
   dac1.setVoltage(x1, false);
   dac2.setVoltage(y1, false);
 }
@@ -187,8 +199,8 @@ void Laser::sendto (long xpos, long ypos)
   }
   // Float was too slow on Arduino, so I used
   // fixed point precision here:
-  long xNew = TO_INT(xpos * _scale) + _offsetX;
-  long yNew = TO_INT(ypos * _scale) + _offsetY;
+  long xNew = (xpos * _scale) + _offsetX; //TO_INT
+  long yNew = (ypos * _scale) + _offsetY; //TO_INT
   long clipX = xNew;
   long clipY = yNew;
   long oldX = _oldX;
@@ -208,8 +220,8 @@ void Laser::sendtoRaw (long xNew, long yNew)
   // devide into equal parts, using _quality
   long fdiffx = xNew - _x;
   long fdiffy = yNew - _y;
-  long diffx = TO_INT(abs(fdiffx) * _quality); 
-  long diffy = TO_INT(abs(fdiffy) * _quality);
+  long diffx = (abs(fdiffx) * _quality); // TO_INT
+  long diffy = (abs(fdiffy) * _quality); // TO_INT
 
   // store movement for max move
   long moved = _moved;
@@ -220,26 +232,26 @@ void Laser::sendtoRaw (long xNew, long yNew)
   {
     diffx = diffy;     
   }
-  fdiffx = FROM_INT(fdiffx) / diffx;
-  fdiffy = FROM_INT(fdiffy) / diffx;
+  fdiffx = (fdiffx) / diffx; //FROM_INT
+  fdiffy = (fdiffy) / diffx; //FROM_INT
   // interpolate in FIXPT
-  FIXPT tmpx = 0;
-  FIXPT tmpy = 0;
+  float tmpx = 0;
+  float tmpy = 0;
   for (int i = 0; i<diffx-1;i++) 
   {
     // for max move, stop inside of line if required...
     if (_maxMove != -1) {
-      long moved2 = moved + abs(TO_INT(tmpx)) + abs(TO_INT(tmpy));
+      long moved2 = moved + abs((long)(tmpx)) + abs((long)(tmpy));
       if (!_laserForceOff && moved2 > _maxMove) {
         off();
-        _laserForceOff = true;
-        _maxMoveX = _x + TO_INT(tmpx);
-        _maxMoveY = _y + TO_INT(tmpy);
+        //_laserForceOff = true;
+        _maxMoveX = _x + (long)(tmpx);
+        _maxMoveY = _y + (long)(tmpy);
       }
     } 
     tmpx += fdiffx;
     tmpy += fdiffy;
-    sendToDAC(_x + TO_INT(tmpx), _y + TO_INT(tmpy));
+    sendToDAC(_x + (long)(tmpx), _y + (long)(tmpy));
     #ifdef LASER_MOVE_DELAY
     wait(LASER_MOVE_DELAY);
     #endif
@@ -248,7 +260,7 @@ void Laser::sendtoRaw (long xNew, long yNew)
   // for max move, stop if required...
   if (!_laserForceOff && _maxMove != -1 && _moved > _maxMove) {
     off();
-    _laserForceOff = true;
+    //_laserForceOff = true;
     _maxMoveX = xNew;
     _maxMoveY = yNew;
   }
@@ -275,7 +287,7 @@ void Laser::on()
 {
   if (!_state && !_laserForceOff) 
   {
-    wait(LASER_TOGGLE_DELAY);
+    //wait(LASER_TOGGLE_DELAY);
     _state = 1;
     digitalWrite(_laserPin, HIGH);
   }
@@ -285,16 +297,22 @@ void Laser::off()
 {
   if (_state) 
   {
-    wait(LASER_TOGGLE_DELAY);
+    //wait(LASER_TOGGLE_DELAY);
     _state = 0;
     digitalWrite(_laserPin, LOW);
   }
 }
 
 void Laser::pwm(uint8_t value) {
-  if (!_state && !_laserForceOff) 
+  if (value == 0 && _state) {
+    _state = 0;
+    analogWrite(_laserPin, 0);
+    return;
+  }
+
+  if (!_laserForceOff) 
   {
-    wait(LASER_TOGGLE_DELAY);
+    //wait(LASER_TOGGLE_DELAY);
     _state = 1;
     analogWrite(_laserPin, value);
   }

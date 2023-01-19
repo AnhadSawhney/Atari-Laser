@@ -12,8 +12,8 @@
 
 
 // Create laser instance (with laser pointer connected to digital pin 5)
-Laser laser(PB0); //, &WIRE);
-bool isOn = false;
+Laser laser(PB8); //, &WIRE);
+//bool isOn = false;
 
 void scani2c() {
   Serial.println("\nI2C Scan:");
@@ -55,7 +55,9 @@ void scani2c() {
 
 void setup() {  
   laser.init();
-  Serial.begin(115200);
+  laser.setScale(1.);
+  laser.setOffset(0,0);
+  Serial.begin(921600);
   while(!Serial);
   laser.setEnable3D(false);
   laser.off();
@@ -76,23 +78,6 @@ int screen_x(int x, int w) {
     return (x as i32 * w as i32 / 1024);
 }*/
 
-void draw(int16_t x, int16_t y, uint8_t z) {
-  if(z > 0){
-    //if(!isOn) { // handle consecutive callsk
-        //laser.sendto(x,y);  //uncomment if random lines start showing up
-        laser.pwm(z*16-1);
-        isOn = true;
-    //}
-  } else {
-    if(isOn) {
-        laser.off();
-        isOn = false;
-    }
-  }
-  laser.sendto(x,y); // sends to DAC ok, something in sendto is killing the output.
-  //laser.sendToDAC(x,y);
-}
-
 void loop() {
   while(Serial.available()) {
     pinMode(LED_BUILTIN, LOW);
@@ -105,7 +90,12 @@ void loop() {
     //Serial.print(x);
     //Serial.print(',');
     //Serial.println(y);
-    draw(x,y,z);
+    if(z > 0) {
+      laser.pwm(z*16-1);
+    } else {
+      laser.pwm(0);
+    }
+    laser.sendToDAC(x*4,y*4); // bypass fancy stuff
   }
   pinMode(LED_BUILTIN, HIGH);
 }
