@@ -5,7 +5,7 @@ import math
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
     port='/dev/ttyACM1',
-    baudrate=921600,
+    baudrate=115200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS
@@ -31,6 +31,7 @@ packet = [0 for i in range(64)]
 packetidx = 0
 
 i = 0
+PACKET_LIMIT = 60
 
 while True:
     z = int(i*10)
@@ -43,10 +44,10 @@ while True:
     packet[packetidx+3] = y >> 8
     packet[packetidx+4] = y & 0x00FF
     packetidx += 5
-    if packetidx >= 60:
-        ser.write(bytearray(packet[0:60]))
+    if packetidx >= PACKET_LIMIT:
+        ser.write(bytearray(packet[0:PACKET_LIMIT]))
         packetidx = 0
-        print(bytearray(packet[0:60]))
+        print(bytearray(packet[0:PACKET_LIMIT]))
     #print("Sent: "+str(z)+","+str(x)+","+str(y))
 
     #print(packetidx)

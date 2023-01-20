@@ -72,8 +72,10 @@ public:
   void setZDist(long dist) { _zDist = dist; }
 
   //! send X/Y to DAC
-  void sendToDAC(int x, int y);
+  void sendToDAC(uint16_t x, uint16_t y);
 
+  void endBurst();
+  void beginBurst();
 private:  
 
   //! computes the out code for line clipping

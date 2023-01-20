@@ -16,10 +16,10 @@
 Laser laser(PB8); //, &WIRE);
 //bool isOn = false;
 
-uint16_t oldx, oldy;
-uint8_t oldz;
+uint16_t oldx, oldy, x, y;
+uint8_t oldz, z;
 
-void scani2c() {
+void scani2c(TwoWire *tw) {
   Serial.println("\nI2C Scan:");
   byte error, address;
   int nDevices;
@@ -30,8 +30,8 @@ void scani2c() {
     // The i2c_scanner uses the return value of
     // the Write.endTransmisstion to see if
     // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
+    tw->beginTransmission(address);
+    error = tw->endTransmission();
 
     if (error == 0)
     {
@@ -61,14 +61,17 @@ void setup() {
   laser.init();
   laser.setScale(1.);
   laser.setOffset(0,0);
-  Serial.begin(921600);
+  Serial.begin(115200);
   while(!Serial);
   laser.setEnable3D(false);
   laser.off();
-  Wire.begin();
+  //Wire.begin();
 
-  scani2c();
+  //scani2c(&Wire1);
+  //scani2c(&Wire2);
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED_BUILTIN, HIGH);
+  Serial.print("Starting Up");
 }
 
 /*
@@ -83,52 +86,56 @@ int screen_x(int x, int w) {
 }*/
 
 void loop() {
-  while(Serial.available()) {
+  if(Serial.available()) {
+    laser.beginBurst();
     pinMode(LED_BUILTIN, LOW);
-    uint8_t z = Serial.read(); // MSB FIRST
-    uint16_t x = ((Serial.read() << 8) | Serial.read())*4;
-    uint16_t y = ((Serial.read() << 8) | Serial.read())*4;
-    //Serial.print("Got: ");
-    //Serial.print(z);
-    //Serial.print(',');
-    //Serial.print(x);
-    //Serial.print(',');
-    //Serial.println(y);
+    while(Serial.available()) {
+      z = Serial.read(); // MSB FIRST
+      x = ((Serial.read() << 8) | Serial.read())*4;
+      y = ((Serial.read() << 8) | Serial.read())*4;
+      //Serial.print("Got: ");
+      //Serial.print(z);
+      //Serial.print(',');
+      //Serial.print(x);
+      //Serial.print(',');
+      //Serial.println(y);
 
-    /*if(x > 4095) {
-      x = 4095;
-    }
+      /*if(x > 4095) {
+        x = 4095;
+      }
 
-    if(y > 4095) {
-      y = 4095;
-    }*/
+      if(y > 4095) {
+        y = 4095;
+      }*/
 
-    if(z == 0) {
-    //  if(oldz > 0) {
-        laser.pwm(0);
-        laser.sendToDAC(x, y); // skip interpolation
-        //laser.off();
-    //  }
-    } else if (z < 17) { // don't execute bad data
-      laser.pwm(z*17);
-      //int16_t dx = abs(x - oldx);
-      //int16_t dy = abs(y - oldy);
+      //if(z == 0) {
+      //  if(oldz > 0) {
+      //    laser.pwm(0);
+      //    laser.sendToDAC(x, y); // skip interpolation
+          //laser.off();
+      //  }
+      //} else if (z < 17) { // don't execute bad data
+        laser.pwm(z*17);
+        //int16_t dx = abs(x - oldx);
+        //int16_t dy = abs(y - oldy);
 
-      //if (dx + dy < BIG_MOVE_THRESH) { // filter travel moves
-      //  laser.sendtoRaw(x,y);
-      //} else {
-        // dont interpolate big moves 
-        laser.sendToDAC(x,y);
+        //if (dx + dy < BIG_MOVE_THRESH) { // filter travel moves
+        //  laser.sendtoRaw(x,y);
+        //} else {
+          // dont interpolate big moves 
+          laser.sendToDAC(x,y);
+        //}
+        //laser.on();
       //}
-      //laser.on();
-    }
 
-    //oldx = x;
-    //oldy = y;
-    oldz = z;
-    
-    //laser.sendToDAC(x,y); // bypass fancy stuff
+      //oldx = x;
+      //oldy = y;
+      //oldz = z;
+      
+      //laser.sendToDAC(x,y); // bypass fancy stuff
+    }
+    laser.endBurst();
+    pinMode(LED_BUILTIN, HIGH);
   }
-  pinMode(LED_BUILTIN, HIGH);
 }
 

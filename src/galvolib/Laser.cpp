@@ -11,17 +11,18 @@
 
 //MCP4X dac;
 
-#include <Adafruit_MCP4725.h>
+//#include <Adafruit_MCP4725.h>
 //#include <Wire.h>
 
-//TwoWire WIRE1(PB7, PB6);
+TwoWire Wire1(PB7, PB6);
+TwoWire Wire2(PB11, PB10);
 
 //Adafruit_MCP4725 dac1;
 //Adafruit_MCP4725 dac2;
 
-#define DAC1 0x60
-#define DAC2 0x61
-byte buffer[3];
+#define DAC1 0x61
+#define DAC2 0x60
+//byte buffer[3];
 
 Laser::Laser(int laserPin) //, TwoWire* WIRE)
 {
@@ -52,26 +53,34 @@ Laser::Laser(int laserPin) //, TwoWire* WIRE)
 void Laser::init()
 {
   //_WIRE->begin();
-  Wire.begin(); 
-  Wire.setClock(400000L); //400000L
+  Wire1.begin(); 
+  //Wire1.setClock(400000L); //400000L
+  Wire2.begin(); 
+  //Wire2.setClock(400000L); //400000L
   //dac1.begin(0x60, &Wire); //, _WIRE);
   //dac2.begin(0x61, &Wire); //, _WIRE);
  
   pinMode(_laserPin, OUTPUT);
 }
 
-//void Laser::beginBurst() {
-//
-//}
+void Laser::endBurst() {
+  Wire1.endTransmission(); // address device
+  Wire2.endTransmission();
+}
 
-void Laser::sendToDAC(int x, int y)
+void Laser::beginBurst() {
+  Wire1.beginTransmission(DAC1);
+  Wire2.beginTransmission(DAC2);
+}
+
+void Laser::sendToDAC(uint16_t x, uint16_t y)
 {
   #ifdef LASER_SWAP_XY
-  int x1 = y;
-  int y1 = x;
+  uint16_t x1 = y;
+  uint16_t y1 = x;
   #else
-  int x1 = x;
-  int y1 = y;
+  uint16_t x1 = x;
+  uint16_t y1 = y;
   #endif
   #ifdef LASER_FLIP_X
   x1 = 4095 - x1;
@@ -81,6 +90,16 @@ void Laser::sendToDAC(int x, int y)
   #endif
   //dac.output2(x1, y1);
 
+  //Wire1.beginTransmission(DAC1);
+  Wire1.write(x1 >> 8);  // pointer
+  Wire1.write((uint8_t)(x1 & 0xFF)); 
+  //Wire1.endTransmission();
+
+  //Wire2.beginTransmission(DAC2);
+  Wire2.write(y1 >> 8);  // pointer
+  Wire2.write((uint8_t)(y1 & 0xFF)); 
+  //Wire2.endTransmission();
+
   // clip
   //x1 = constrain(x1,0,4095);
   //y1 = constrain(y1,0,4095);
@@ -88,6 +107,7 @@ void Laser::sendToDAC(int x, int y)
   //dac1.setVoltage(x1, false);
   //dac2.setVoltage(y1, false);
 
+  /*
   buffer[0] = 0b01000000; // control byte
   buffer[1] = x1 >> 4; // MSB 11-4 shift right 4 places
   buffer[2] = x1 << 4; // LSB 3-0 shift left 4 places
@@ -106,6 +126,7 @@ void Laser::sendToDAC(int x, int y)
   Wire.write(buffer[1]);  // 8 MSB
   Wire.write(buffer[2]);  // 4 LSB
   Wire.endTransmission();
+  */
 }
 
 void Laser::resetClipArea()
