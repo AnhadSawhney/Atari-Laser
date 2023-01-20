@@ -10,10 +10,14 @@
 
 #include "galvolib/Laser.h"
 
+#define BIG_MOVE_THRESH 10
 
 // Create laser instance (with laser pointer connected to digital pin 5)
 Laser laser(PB8); //, &WIRE);
 //bool isOn = false;
+
+uint16_t oldx, oldy;
+uint8_t oldz;
 
 void scani2c() {
   Serial.println("\nI2C Scan:");
@@ -81,21 +85,49 @@ int screen_x(int x, int w) {
 void loop() {
   while(Serial.available()) {
     pinMode(LED_BUILTIN, LOW);
-    uint8_t z = Serial.read();
-    int16_t x = Serial.read() | (Serial.read() << 8);
-    int16_t y = Serial.read() | (Serial.read() << 8);
+    uint8_t z = Serial.read(); // MSB FIRST
+    uint16_t x = ((Serial.read() << 8) | Serial.read())*4;
+    uint16_t y = ((Serial.read() << 8) | Serial.read())*4;
     //Serial.print("Got: ");
     //Serial.print(z);
     //Serial.print(',');
     //Serial.print(x);
     //Serial.print(',');
     //Serial.println(y);
-    if(z > 0) {
-      laser.pwm(z*16-1);
-    } else {
-      laser.pwm(0);
+
+    /*if(x > 4095) {
+      x = 4095;
     }
-    laser.sendToDAC(x*4,y*4); // bypass fancy stuff
+
+    if(y > 4095) {
+      y = 4095;
+    }*/
+
+    if(z == 0) {
+    //  if(oldz > 0) {
+        laser.pwm(0);
+        laser.sendToDAC(x, y); // skip interpolation
+        //laser.off();
+    //  }
+    } else if (z < 17) { // don't execute bad data
+      laser.pwm(z*17);
+      //int16_t dx = abs(x - oldx);
+      //int16_t dy = abs(y - oldy);
+
+      //if (dx + dy < BIG_MOVE_THRESH) { // filter travel moves
+      //  laser.sendtoRaw(x,y);
+      //} else {
+        // dont interpolate big moves 
+        laser.sendToDAC(x,y);
+      //}
+      //laser.on();
+    }
+
+    //oldx = x;
+    //oldy = y;
+    oldz = z;
+    
+    //laser.sendToDAC(x,y); // bypass fancy stuff
   }
   pinMode(LED_BUILTIN, HIGH);
 }

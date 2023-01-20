@@ -26,25 +26,33 @@ except Exception as e:
     exit()
 
 #coords = [[0,0,0], [16,1000,0], [8,1000,1000], [16,0,1000]]
+packet = [0 for i in range(64)]
+#print(packet)
+packetidx = 0
 
 i = 0
 
 while True:
-    z = int(i*16)
+    z = int(i*10)
     x = int(512 * (1+math.cos(2 * math.pi * i))) # should be 0 to 1024
     y = int(512 * (1+math.sin(2 * math.pi * i))) # should be 0 to 1024
 
-    packet = bytearray()
-    packet.append(z)
-    packet.append(x & 0x00FF)
-    packet.append(x >> 8)
-    packet.append(y & 0x00FF)
-    packet.append(y >> 8)
-    ser.write(packet)
-    print("Sent: "+str(z)+","+str(x)+","+str(y))
+    packet[packetidx] = z & 0x00FF
+    packet[packetidx+1] = x >> 8
+    packet[packetidx+2] = x & 0x00FF
+    packet[packetidx+3] = y >> 8
+    packet[packetidx+4] = y & 0x00FF
+    packetidx += 5
+    if packetidx >= 60:
+        ser.write(bytearray(packet[0:60]))
+        packetidx = 0
+        print(bytearray(packet[0:60]))
+    #print("Sent: "+str(z)+","+str(x)+","+str(y))
 
-    time.sleep(0.0002)
+    #print(packetidx)
 
-    i += 0.001
+    time.sleep(0.02)
+
+    i += 0.005
     if i > 1:
         i = 0

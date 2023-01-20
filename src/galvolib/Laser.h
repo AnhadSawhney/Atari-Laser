@@ -12,7 +12,7 @@
 // defines the granularity of the line interpolation. 64 means that each line is split into steps of 64 pixels in the longer direction.
 // setting smaller values will slow down the rendering but will cause more linearity in the galvo movement,
 // setting bigger values will cause faster rendering, but lines will not be straight anymore.
-#define LASER_QUALITY 16
+#define LASER_QUALITY 4
 
 // Defines how long the galvos wait for the on/off toggling of the laser pointer (in microseconds), this will depend on your laser pointer.
 #define LASER_TOGGLE_DELAY 500
@@ -21,7 +21,7 @@
 // Defines the delay the laser waits after reaching a given position (in microseconds).
 #define LASER_END_DELAY 5
 // Defines the delay after each laser movement (used when interpolating lines, in microseconds), if not defines, 0 is used
-#define LASER_MOVE_DELAY 5
+//#define LASER_MOVE_DELAY 5
 
 // -- The following flags can be used to rotate/flip the output without changing the DAC wiring, just uncomment the desired swap/flip
 // define this to swap X and Y on the DAC
@@ -45,7 +45,7 @@ public:
   void sendto(long x, long y);
   //! sends the laser to the raw position (the movement is always linearly interpolated depending on the quality,
   //! to avoid too fast movements.
-  void sendtoRaw(long x, long y);
+  void sendtoRaw(int16_t x, int16_t y);
 
   //! draws a line by turning the laser off, going to x1,y1, turning it on and going to x2,y2.
   void drawline(long x1, long y1, long x2, long y2);
@@ -83,13 +83,13 @@ private:
 
   int _laserPin;
 
-  FIXPT _quality;
+  float _quality;
 
   long _x;
   long _y;
   int  _state;
 
-  FIXPT _scale;
+  float _scale;
   long _offsetX;
   long _offsetY;
 

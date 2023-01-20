@@ -16,14 +16,18 @@
 
 //TwoWire WIRE1(PB7, PB6);
 
-Adafruit_MCP4725 dac1;
-Adafruit_MCP4725 dac2;
+//Adafruit_MCP4725 dac1;
+//Adafruit_MCP4725 dac2;
+
+#define DAC1 0x60
+#define DAC2 0x61
+byte buffer[3];
 
 Laser::Laser(int laserPin) //, TwoWire* WIRE)
 {
   //_WIRE = WIRE;
   _laserPin = laserPin;
-  _quality = FROM_FLOAT(1./(LASER_QUALITY));
+  _quality = (1./(LASER_QUALITY));
 
   _x = 0;
   _y = 0;
@@ -48,16 +52,17 @@ Laser::Laser(int laserPin) //, TwoWire* WIRE)
 void Laser::init()
 {
   //_WIRE->begin();
-  dac1.begin(0x60); //, _WIRE);
-  dac2.begin(0x61); //, _WIRE);
-  
-  //dac.init(MCP4X_4822, 5000, 5000,10, 7, 1);
-  //dac.setGain2x(MCP4X_CHAN_A, 0);
-  //dac.setGain2x(MCP4X_CHAN_B, 0);
-  //dac.begin(1);
+  Wire.begin(); 
+  Wire.setClock(400000L); //400000L
+  //dac1.begin(0x60, &Wire); //, _WIRE);
+  //dac2.begin(0x61, &Wire); //, _WIRE);
  
   pinMode(_laserPin, OUTPUT);
 }
+
+//void Laser::beginBurst() {
+//
+//}
 
 void Laser::sendToDAC(int x, int y)
 {
@@ -79,16 +84,28 @@ void Laser::sendToDAC(int x, int y)
   // clip
   //x1 = constrain(x1,0,4095);
   //y1 = constrain(y1,0,4095);
-  if(x1 > 4095) {
-    x1 = 4095;
-  }
 
-  if(y1 > 4095) {
-    y1 = 4095;
-  }
+  //dac1.setVoltage(x1, false);
+  //dac2.setVoltage(y1, false);
 
-  dac1.setVoltage(x1, false);
-  dac2.setVoltage(y1, false);
+  buffer[0] = 0b01000000; // control byte
+  buffer[1] = x1 >> 4; // MSB 11-4 shift right 4 places
+  buffer[2] = x1 << 4; // LSB 3-0 shift left 4 places
+
+  Wire.beginTransmission(DAC1); // address device
+  Wire.write(buffer[0]);  // pointer
+  Wire.write(buffer[1]);  // 8 MSB
+  Wire.write(buffer[2]);  // 4 LSB
+  Wire.endTransmission();
+
+  buffer[1] = y1 >> 4; // MSB 11-4 shift right 4 places
+  buffer[2] = y1 << 4; // LSB 3-0 shift left 4 places
+
+  Wire.beginTransmission(DAC2); // address device
+  Wire.write(buffer[0]);  // pointer
+  Wire.write(buffer[1]);  // 8 MSB
+  Wire.write(buffer[2]);  // 4 LSB
+  Wire.endTransmission();
 }
 
 void Laser::resetClipArea()
@@ -215,16 +232,16 @@ void Laser::sendto (long xpos, long ypos)
   _oldY = yNew;
 }
 
-void Laser::sendtoRaw (long xNew, long yNew)
+void Laser::sendtoRaw (int16_t xNew, int16_t yNew)
 {
   // devide into equal parts, using _quality
-  long fdiffx = xNew - _x;
-  long fdiffy = yNew - _y;
-  long diffx = (abs(fdiffx) * _quality); // TO_INT
-  long diffy = (abs(fdiffy) * _quality); // TO_INT
+  int16_t fdiffx = xNew - _x;
+  int16_t fdiffy = yNew - _y;
+  int16_t diffx = (abs(fdiffx) * _quality); // TO_INT
+  int16_t diffy = (abs(fdiffy) * _quality); // TO_INT
 
   // store movement for max move
-  long moved = _moved;
+  int16_t moved = _moved;
   _moved += abs(fdiffx) + abs(fdiffy);
 
   // use the bigger direction
@@ -241,17 +258,17 @@ void Laser::sendtoRaw (long xNew, long yNew)
   {
     // for max move, stop inside of line if required...
     if (_maxMove != -1) {
-      long moved2 = moved + abs((long)(tmpx)) + abs((long)(tmpy));
+      int16_t moved2 = moved + abs((int16_t)(tmpx)) + abs((int16_t)(tmpy));
       if (!_laserForceOff && moved2 > _maxMove) {
         off();
         //_laserForceOff = true;
-        _maxMoveX = _x + (long)(tmpx);
-        _maxMoveY = _y + (long)(tmpy);
+        _maxMoveX = _x + (int16_t)(tmpx);
+        _maxMoveY = _y + (int16_t)(tmpy);
       }
     } 
     tmpx += fdiffx;
     tmpy += fdiffy;
-    sendToDAC(_x + (long)(tmpx), _y + (long)(tmpy));
+    sendToDAC(_x + (int16_t)(tmpx), _y + (int16_t)(tmpy));
     #ifdef LASER_MOVE_DELAY
     wait(LASER_MOVE_DELAY);
     #endif
@@ -287,9 +304,9 @@ void Laser::on()
 {
   if (!_state && !_laserForceOff) 
   {
-    //wait(LASER_TOGGLE_DELAY);
     _state = 1;
     digitalWrite(_laserPin, HIGH);
+    wait(LASER_TOGGLE_DELAY);
   }
 }
 
@@ -297,9 +314,9 @@ void Laser::off()
 {
   if (_state) 
   {
-    //wait(LASER_TOGGLE_DELAY);
     _state = 0;
     digitalWrite(_laserPin, LOW);
+    wait(LASER_TOGGLE_DELAY);
   }
 }
 
@@ -307,14 +324,15 @@ void Laser::pwm(uint8_t value) {
   if (value == 0 && _state) {
     _state = 0;
     analogWrite(_laserPin, 0);
+    wait(LASER_TOGGLE_DELAY);
     return;
   }
 
   if (!_laserForceOff) 
   {
-    //wait(LASER_TOGGLE_DELAY);
     _state = 1;
     analogWrite(_laserPin, value);
+    wait(LASER_TOGGLE_DELAY);
   }
 }
 
