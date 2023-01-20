@@ -5,7 +5,7 @@ import math
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
     port='/dev/ttyACM1',
-    baudrate=115200,
+    baudrate=921600,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS

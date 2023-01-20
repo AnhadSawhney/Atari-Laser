@@ -15,7 +15,7 @@
 //#include <Wire.h>
 
 TwoWire Wire1(PB7, PB6);
-TwoWire Wire2(PB11, PB10);
+//TwoWire Wire2(PB11, PB10);
 
 //Adafruit_MCP4725 dac1;
 //Adafruit_MCP4725 dac2;
@@ -54,15 +54,15 @@ void Laser::init()
 {
   //_WIRE->begin();
   Wire1.begin(); 
-  //Wire1.setClock(400000L); //400000L
-  Wire2.begin(); 
+  Wire1.setClock(400000L); //400000L
+  //Wire2.begin(); 
   //Wire2.setClock(400000L); //400000L
   //dac1.begin(0x60, &Wire); //, _WIRE);
   //dac2.begin(0x61, &Wire); //, _WIRE);
  
   pinMode(_laserPin, OUTPUT);
 }
-
+/*
 void Laser::endBurst() {
   Wire1.endTransmission(); // address device
   Wire2.endTransmission();
@@ -72,6 +72,7 @@ void Laser::beginBurst() {
   Wire1.beginTransmission(DAC1);
   Wire2.beginTransmission(DAC2);
 }
+*/
 
 void Laser::sendToDAC(uint16_t x, uint16_t y)
 {
@@ -90,15 +91,15 @@ void Laser::sendToDAC(uint16_t x, uint16_t y)
   #endif
   //dac.output2(x1, y1);
 
-  //Wire1.beginTransmission(DAC1);
+  Wire1.beginTransmission(DAC1);
   Wire1.write(x1 >> 8);  // pointer
   Wire1.write((uint8_t)(x1 & 0xFF)); 
-  //Wire1.endTransmission();
+  Wire1.endTransmission();
 
-  //Wire2.beginTransmission(DAC2);
-  Wire2.write(y1 >> 8);  // pointer
-  Wire2.write((uint8_t)(y1 & 0xFF)); 
-  //Wire2.endTransmission();
+  Wire1.beginTransmission(DAC2);
+  Wire1.write(y1 >> 8);  // pointer
+  Wire1.write((uint8_t)(y1 & 0xFF)); 
+  Wire1.endTransmission();
 
   // clip
   //x1 = constrain(x1,0,4095);

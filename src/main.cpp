@@ -1,4 +1,4 @@
-#define SERIAL_BUFFER_SIZE 1024
+#define SERIAL_BUFFER_SIZE 4096
 
 #include <Arduino.h>
 
@@ -10,7 +10,7 @@
 
 #include "galvolib/Laser.h"
 
-#define BIG_MOVE_THRESH 10
+#define BIG_MOVE_THRESH 100
 
 // Create laser instance (with laser pointer connected to digital pin 5)
 Laser laser(PB8); //, &WIRE);
@@ -61,7 +61,7 @@ void setup() {
   laser.init();
   laser.setScale(1.);
   laser.setOffset(0,0);
-  Serial.begin(115200);
+  Serial.begin(921600);
   while(!Serial);
   laser.setEnable3D(false);
   laser.off();
@@ -86,9 +86,9 @@ int screen_x(int x, int w) {
 }*/
 
 void loop() {
-  if(Serial.available()) {
-    laser.beginBurst();
-    pinMode(LED_BUILTIN, LOW);
+  //if(Serial.available()) {
+  //  laser.beginBurst();
+  //  pinMode(LED_BUILTIN, LOW);
     while(Serial.available()) {
       z = Serial.read(); // MSB FIRST
       x = ((Serial.read() << 8) | Serial.read())*4;
@@ -108,34 +108,42 @@ void loop() {
         y = 4095;
       }*/
 
-      //if(z == 0) {
-      //  if(oldz > 0) {
-      //    laser.pwm(0);
-      //    laser.sendToDAC(x, y); // skip interpolation
-          //laser.off();
-      //  }
-      //} else if (z < 17) { // don't execute bad data
-        laser.pwm(z*17);
-        //int16_t dx = abs(x - oldx);
-        //int16_t dy = abs(y - oldy);
+      if(z == 0) {
+        if(oldz > 0) {
+          laser.pwm(0);
+          delay(1);
+        }
 
-        //if (dx + dy < BIG_MOVE_THRESH) { // filter travel moves
+        laser.sendToDAC(x, y); // skip interpolation
+        //laser.off();
+      } else if (z < 17) { // don't execute bad data
+        if(oldz == 0) {
+          laser.sendToDAC(x, y);
+          delay(1);
+          laser.pwm(z*17);
+        } else {
+          laser.pwm(z*17);
+          laser.sendToDAC(x,y);
+        }
+        //long dx = abs(x - oldx);
+        //long dy = abs(y - oldy);
+
+        //if (z > 5 && z < 12) { // filter travel moves (dx*dx + dy*dy) < BIG_MOVE_THRESH && 
         //  laser.sendtoRaw(x,y);
         //} else {
           // dont interpolate big moves 
-          laser.sendToDAC(x,y);
+          
         //}
-        //laser.on();
-      //}
+      }
 
-      //oldx = x;
-      //oldy = y;
-      //oldz = z;
+      oldx = x;
+      oldy = y;
+      oldz = z;
       
       //laser.sendToDAC(x,y); // bypass fancy stuff
     }
-    laser.endBurst();
+  //  laser.endBurst();
     pinMode(LED_BUILTIN, HIGH);
-  }
+  //}
 }
 
