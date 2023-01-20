@@ -54,9 +54,9 @@ void Laser::init()
 {
   //_WIRE->begin();
   Wire1.begin(); 
-  //Wire1.setClock(400000L); //400000L
+  Wire1.setClock(400000L); //400000L
   Wire2.begin(); 
-  //Wire2.setClock(400000L); //400000L
+  Wire2.setClock(400000L); //400000L
   //dac1.begin(0x60, &Wire); //, _WIRE);
   //dac2.begin(0x61, &Wire); //, _WIRE);
  
@@ -92,11 +92,13 @@ void Laser::sendToDAC(uint16_t x, uint16_t y)
 
   //Wire1.beginTransmission(DAC1);
   Wire1.write(x1 >> 8);  // pointer
+
   Wire1.write((uint8_t)(x1 & 0xFF)); 
   //Wire1.endTransmission();
 
   //Wire2.beginTransmission(DAC2);
   Wire2.write(y1 >> 8);  // pointer
+  
   Wire2.write((uint8_t)(y1 & 0xFF)); 
   //Wire2.endTransmission();
 

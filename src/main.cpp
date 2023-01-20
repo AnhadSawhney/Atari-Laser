@@ -1,4 +1,4 @@
-#define SERIAL_BUFFER_SIZE 1024
+//#define SERIAL_BUFFER_SIZE 4096
 
 #include <Arduino.h>
 
@@ -7,6 +7,8 @@
 #ifndef LED_BUILTIN
   #define LED_BUILTIN PC13
 #endif
+
+#define LED PD12
 
 #include "galvolib/Laser.h"
 
@@ -61,7 +63,7 @@ void setup() {
   laser.init();
   laser.setScale(1.);
   laser.setOffset(0,0);
-  Serial.begin(115200);
+  Serial.begin(921600);
   while(!Serial);
   laser.setEnable3D(false);
   laser.off();
@@ -69,8 +71,8 @@ void setup() {
 
   //scani2c(&Wire1);
   //scani2c(&Wire2);
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(LED_BUILTIN, HIGH);
+  pinMode(LED, OUTPUT);
+  pinMode(LED, HIGH);
   Serial.print("Starting Up");
 }
 
@@ -85,10 +87,14 @@ int screen_x(int x, int w) {
     return (x as i32 * w as i32 / 1024);
 }*/
 
+int burst = 0;
+#define BURSTLENGTH 50
+
 void loop() {
+  pinMode(LED, HIGH);
   if(Serial.available()) {
     laser.beginBurst();
-    pinMode(LED_BUILTIN, LOW);
+    pinMode(LED, LOW);
     while(Serial.available()) {
       z = Serial.read(); // MSB FIRST
       x = ((Serial.read() << 8) | Serial.read())*4;
@@ -108,25 +114,46 @@ void loop() {
         y = 4095;
       }*/
 
-      //if(z == 0) {
-      //  if(oldz > 0) {
-      //    laser.pwm(0);
-      //    laser.sendToDAC(x, y); // skip interpolation
-          //laser.off();
-      //  }
-      //} else if (z < 17) { // don't execute bad data
-        laser.pwm(z*17);
-        //int16_t dx = abs(x - oldx);
-        //int16_t dy = abs(y - oldy);
+      if(z == 0) {
+        if(oldz > 0) {
+          laser.pwm(0);
+          delay(1);
+        }
 
-        //if (dx + dy < BIG_MOVE_THRESH) { // filter travel moves
+        laser.sendToDAC(x, y); // skip interpolation
+        //laser.off();
+      } else if (z < 17) { // don't execute bad data
+        if(oldz == 0) {
+          laser.sendToDAC(x, y);
+          delay(1);
+          laser.pwm(z*17);
+        } else {
+          z = 15; // really bright
+          laser.pwm(z*17);
+          laser.sendToDAC(x,y);
+        }
+        
+        //long dx = abs(x - oldx);
+        //long dy = abs(y - oldy);
+
+        //if (z > 5 && z < 12) { // filter travel moves (dx*dx + dy*dy) < BIG_MOVE_THRESH && 
         //  laser.sendtoRaw(x,y);
         //} else {
           // dont interpolate big moves 
-          laser.sendToDAC(x,y);
+          
         //}
-        //laser.on();
-      //}
+      }
+
+
+      //oldx = x;
+      //oldy = y;
+      oldz = z;
+
+      burst++;
+      if(burst > BURSTLENGTH) {
+        laser.endBurst();
+        laser.beginBurst();
+      }
 
       //oldx = x;
       //oldy = y;
@@ -135,7 +162,6 @@ void loop() {
       //laser.sendToDAC(x,y); // bypass fancy stuff
     }
     laser.endBurst();
-    pinMode(LED_BUILTIN, HIGH);
   }
 }
 

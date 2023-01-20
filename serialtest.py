@@ -4,8 +4,8 @@ import math
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
 ser = serial.Serial(
-    port='/dev/ttyACM1',
-    baudrate=115200,
+    port='/dev/ttyACM2',
+    baudrate=921600,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
     bytesize=serial.EIGHTBITS
@@ -52,7 +52,7 @@ while True:
 
     #print(packetidx)
 
-    time.sleep(0.02)
+    time.sleep(0.002)
 
     i += 0.005
     if i > 1:
